@@ -11,37 +11,20 @@ import {
   Legend,
   ResponsiveContainer,
   CartesianGrid,
-  Label
 } from 'recharts';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
-export default function LineChartMetrics({ clientId }: { clientId: number }) {
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+export default function LineChartMetrics({
+  clientId,
+  startDate,
+  endDate,
+}: {
+  clientId: number;
+  startDate: string;
+  endDate: string;
+}) {
   const [groupBy, setGroupBy] = useState<'day' | 'week' | 'month'>('day');
   const [chartData, setChartData] = useState<any[]>([]);
-
-  const setQuickRange = (days: number) => {
-    const now = new Date();
-    const start = new Date();
-    start.setDate(now.getDate() - days);
-    setStartDate(start.toISOString().split('T')[0]);
-    setEndDate(now.toISOString().split('T')[0]);
-  };
-
-  const setLastMonth = () => {
-    const now = new Date();
-    const year = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
-    const month = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
-    const start = new Date(year, month, 1);
-    const end = new Date(year, month + 1, 0);
-    setStartDate(start.toISOString().split('T')[0]);
-    setEndDate(end.toISOString().split('T')[0]);
-  };
-
-  useEffect(() => {
-    setQuickRange(30);
-  }, []);
 
   useEffect(() => {
     if (!clientId || !startDate || !endDate) return;
@@ -75,7 +58,9 @@ export default function LineChartMetrics({ clientId }: { clientId: number }) {
           weekStart.setDate(date.getDate() - date.getDay());
           key = weekStart.toISOString().split('T')[0];
         } else if (groupBy === 'month') {
-          key = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+          key = `${date.getFullYear()}-${(date.getMonth() + 1)
+            .toString()
+            .padStart(2, '0')}`;
         }
 
         if (!grouped[key]) {
@@ -89,7 +74,9 @@ export default function LineChartMetrics({ clientId }: { clientId: number }) {
         if (clients?.seo_sources?.includes(row.first_lead_source)) grouped[key].seo++;
       }
 
-      const final = Object.values(grouped).sort((a: any, b: any) => a.date.localeCompare(b.date));
+      const final = Object.values(grouped).sort((a: any, b: any) =>
+        a.date.localeCompare(b.date)
+      );
       setChartData(final);
     }
 
@@ -103,35 +90,6 @@ export default function LineChartMetrics({ clientId }: { clientId: number }) {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-wrap items-center gap-4">
-          <label className="text-sm">Start:</label>
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="border px-2 py-1 rounded"
-          />
-          <label className="text-sm">End:</label>
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="border px-2 py-1 rounded"
-          />
-          {[7, 30, 90].map((d) => (
-            <button
-              key={d}
-              onClick={() => setQuickRange(d)}
-              className="bg-blue-500 text-white px-3 py-1 rounded"
-            >
-              Last {d} Days
-            </button>
-          ))}
-          <button
-            onClick={setLastMonth}
-            className="bg-blue-700 text-white px-3 py-1 rounded"
-          >
-            Last Month
-          </button>
           <label className="ml-4 text-sm">Group by:</label>
           <select
             value={groupBy}
