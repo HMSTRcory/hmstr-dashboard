@@ -14,7 +14,15 @@ import {
 } from 'recharts';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
-export default function LineChartCost({ clientId }: { clientId: number }) {
+export default function LineChartCost({
+  clientId,
+  startDate,
+  endDate,
+}: {
+  clientId: number;
+  startDate: string;
+  endDate: string;
+}) {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [groupBy, setGroupBy] = useState<'day' | 'week' | 'month'>('day');
