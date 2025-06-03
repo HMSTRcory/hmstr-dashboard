@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -10,7 +10,7 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  CartesianGrid,
+  CartesianGrid
 } from 'recharts';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
@@ -19,6 +19,12 @@ interface LineChartCostProps {
   startDate: string;
   endDate: string;
 }
+
+const CurrencyLabel = ({ x, y, value }: any) => (
+  <text x={x} y={y} dy={-4} fontSize={12} textAnchor="middle" fill="#333">
+    ${`$${value.toFixed(2)}`}
+  </text>
+);
 
 export default function LineChartCost({ clientId, startDate, endDate }: LineChartCostProps) {
   const [groupBy, setGroupBy] = useState<'day' | 'week' | 'month'>('day');
@@ -99,21 +105,36 @@ export default function LineChartCost({ clientId, startDate, endDate }: LineChar
       }
 
       for (const spend of ppcSpend || []) {
-        const key = getKey(spend.date);
+        const key = groupBy === 'day'
+          ? spend.date
+          : groupBy === 'week'
+          ? new Date(spend.date).toISOString().split('T')[0]
+          : `${new Date(spend.date).getFullYear()}-${(new Date(spend.date).getMonth() + 1).toString().padStart(2, '0')}`;
+
         if (!grouped[key]) grouped[key] = { date: key, all: {}, ppc: {}, lsa: {}, seo: {} };
         grouped[key].all.cost = (grouped[key].all.cost || 0) + spend.cost_micros / 1_000_000;
         grouped[key].ppc.cost = (grouped[key].ppc.cost || 0) + spend.cost_micros / 1_000_000;
       }
 
       for (const spend of lsaSpend || []) {
-        const key = getKey(spend.date);
+        const key = groupBy === 'day'
+          ? spend.date.split('T')[0]
+          : groupBy === 'week'
+          ? new Date(spend.date).toISOString().split('T')[0]
+          : `${new Date(spend.date).getFullYear()}-${(new Date(spend.date).getMonth() + 1).toString().padStart(2, '0')}`;
+
         if (!grouped[key]) grouped[key] = { date: key, all: {}, ppc: {}, lsa: {}, seo: {} };
         grouped[key].all.cost = (grouped[key].all.cost || 0) + spend.spend;
         grouped[key].lsa.cost = (grouped[key].lsa.cost || 0) + spend.spend;
       }
 
       for (const spend of seoSpend || []) {
-        const key = getKey(spend.date);
+        const key = groupBy === 'day'
+          ? spend.date.split('T')[0]
+          : groupBy === 'week'
+          ? new Date(spend.date).toISOString().split('T')[0]
+          : `${new Date(spend.date).getFullYear()}-${(new Date(spend.date).getMonth() + 1).toString().padStart(2, '0')}`;
+
         if (!grouped[key]) grouped[key] = { date: key, all: {}, ppc: {}, lsa: {}, seo: {} };
         grouped[key].all.cost = (grouped[key].all.cost || 0) + spend.spend;
         grouped[key].seo.cost = (grouped[key].seo.cost || 0) + spend.spend;
@@ -129,16 +150,6 @@ export default function LineChartCost({ clientId, startDate, endDate }: LineChar
 
       setChartData(result);
     }
-
-    const getKey = (dateStr: string) => {
-      const date = new Date(dateStr);
-      if (groupBy === 'day') return date.toISOString().split('T')[0];
-      if (groupBy === 'week') {
-        date.setDate(date.getDate() - date.getDay());
-        return date.toISOString().split('T')[0];
-      }
-      return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-    };
 
     fetchData();
   }, [clientId, startDate, endDate, groupBy]);
@@ -169,34 +180,10 @@ export default function LineChartCost({ clientId, startDate, endDate }: LineChar
             <YAxis tickFormatter={(v) => `$${v.toFixed(0)}`} />
             <Tooltip formatter={(v: any) => `$${v.toFixed(2)}`} />
             <Legend />
-            <Line
-              type="monotone"
-              dataKey="all"
-              stroke="#64748b"
-              strokeWidth={2}
-              label={({ value }) => `$${value.toFixed(2)}`}
-            />
-            <Line
-              type="monotone"
-              dataKey="ppc"
-              stroke="#3b82f6"
-              strokeWidth={2}
-              label={({ value }) => `$${value.toFixed(2)}`}
-            />
-            <Line
-              type="monotone"
-              dataKey="lsa"
-              stroke="#10b981"
-              strokeWidth={2}
-              label={({ value }) => `$${value.toFixed(2)}`}
-            />
-            <Line
-              type="monotone"
-              dataKey="seo"
-              stroke="#f59e0b"
-              strokeWidth={2}
-              label={({ value }) => `$${value.toFixed(2)}`}
-            />
+            <Line type="monotone" dataKey="all" stroke="#64748b" strokeWidth={2} label={<CurrencyLabel />} />
+            <Line type="monotone" dataKey="ppc" stroke="#3b82f6" strokeWidth={2} label={<CurrencyLabel />} />
+            <Line type="monotone" dataKey="lsa" stroke="#10b981" strokeWidth={2} label={<CurrencyLabel />} />
+            <Line type="monotone" dataKey="seo" stroke="#f59e0b" strokeWidth={2} label={<CurrencyLabel />} />
           </LineChart>
         </ResponsiveContainer>
       </CardContent>
