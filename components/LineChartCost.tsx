@@ -22,7 +22,7 @@ interface LineChartCostProps {
 
 const CurrencyLabel = ({ x, y, value }: any) => (
   <text x={x} y={y} dy={-4} fontSize={12} textAnchor="middle" fill="#333">
-    ${`$${value.toFixed(2)}`}
+    {`$${value.toFixed(2)}`}
   </text>
 );
 
@@ -41,34 +41,36 @@ export default function LineChartCost({ clientId, startDate, endDate }: LineChar
         .single();
 
       const accountId = clients?.google_ads_act_id;
+      const dateStart = `${startDate}T00:00:00`;
+      const dateEnd = `${endDate}T23:59:59`;
 
       const { data: leads } = await supabase
         .from('hmstr_leads')
         .select('first_qual_date, first_lead_source, hmstr_qualified_lead')
         .eq('client_id', clientId)
-        .gte('first_qual_date', startDate)
-        .lte('first_qual_date', endDate);
+        .gte('first_qual_date', dateStart)
+        .lte('first_qual_date', dateEnd);
 
       const { data: ppcSpend } = await supabase
         .from('googleads_campain_data')
         .select('date, cost_micros')
         .eq('google_ads_customer_id', accountId)
-        .gte('date', startDate)
-        .lte('date', endDate);
+        .gte('date', dateStart)
+        .lte('date', dateEnd);
 
       const { data: lsaSpend } = await supabase
         .from('spend_data_lsa')
         .select('date, spend')
         .eq('client_id', clientId)
-        .gte('date', startDate)
-        .lte('date', endDate);
+        .gte('date', dateStart)
+        .lte('date', dateEnd);
 
       const { data: seoSpend } = await supabase
         .from('spend_data_seo')
         .select('date, spend')
         .eq('client_id', clientId)
-        .gte('date', startDate)
-        .lte('date', endDate);
+        .gte('date', dateStart)
+        .lte('date', dateEnd);
 
       const grouped: Record<string, any> = {};
 
