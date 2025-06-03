@@ -11,18 +11,17 @@ import {
   Legend,
   ResponsiveContainer,
   CartesianGrid,
+  Label,
 } from 'recharts';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
-export default function LineChartMetrics({
-  clientId,
-  startDate,
-  endDate,
-}: {
+interface LineChartMetricsProps {
   clientId: number;
   startDate: string;
   endDate: string;
-}) {
+}
+
+export default function LineChartMetrics({ clientId, startDate, endDate }: LineChartMetricsProps) {
   const [groupBy, setGroupBy] = useState<'day' | 'week' | 'month'>('day');
   const [chartData, setChartData] = useState<any[]>([]);
 
@@ -58,9 +57,7 @@ export default function LineChartMetrics({
           weekStart.setDate(date.getDate() - date.getDay());
           key = weekStart.toISOString().split('T')[0];
         } else if (groupBy === 'month') {
-          key = `${date.getFullYear()}-${(date.getMonth() + 1)
-            .toString()
-            .padStart(2, '0')}`;
+          key = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
         }
 
         if (!grouped[key]) {
@@ -74,9 +71,7 @@ export default function LineChartMetrics({
         if (clients?.seo_sources?.includes(row.first_lead_source)) grouped[key].seo++;
       }
 
-      const final = Object.values(grouped).sort((a: any, b: any) =>
-        a.date.localeCompare(b.date)
-      );
+      const final = Object.values(grouped).sort((a: any, b: any) => a.date.localeCompare(b.date));
       setChartData(final);
     }
 
