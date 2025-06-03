@@ -48,10 +48,10 @@ export default function TopMetrics({
     if (leadsError || !leads) return;
 
     const result = {
-      all: { count: 0, leadScore: 0, closeScore: 0 },
-      ppc: { count: 0, leadScore: 0, closeScore: 0 },
-      lsa: { count: 0, leadScore: 0, closeScore: 0 },
-      seo: { count: 0, leadScore: 0, closeScore: 0 },
+      all: { count: 0, leadScore: 0, closeScore: 0, costPerQL: 0 },
+      ppc: { count: 0, leadScore: 0, closeScore: 0, costPerQL: 0 },
+      lsa: { count: 0, leadScore: 0, closeScore: 0, costPerQL: 0 },
+      seo: { count: 0, leadScore: 0, closeScore: 0, costPerQL: 0 },
     };
 
     leads.forEach((row) => {
