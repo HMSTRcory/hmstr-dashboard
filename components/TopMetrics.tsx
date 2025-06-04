@@ -34,6 +34,12 @@ export default function TopMetrics({
   });
   const [pieData, setPieData] = useState<any[]>([]);
 
+  const nextDay = (dateStr: string) => {
+    const date = new Date(dateStr);
+    date.setDate(date.getDate() + 1);
+    return date.toISOString().split('T')[0];
+  };
+
   const fetchMetrics = async () => {
     if (!clientId || !startDate || !endDate) return;
 
@@ -43,7 +49,7 @@ export default function TopMetrics({
       .eq('client_id', clientId)
       .eq('hmstr_qualified_lead', true)
       .gte('first_qual_date', startDate)
-      .lte('first_qual_date', endDate);
+      .lt('first_qual_date', nextDay(endDate));
 
     if (leadsError || !leads) return;
 
@@ -102,7 +108,7 @@ export default function TopMetrics({
       .select('cost_micros')
       .eq('google_ads_customer_id', getCustomerId(clientId))
       .gte('date', start)
-      .lte('date', end);
+      .lte('date', end); // This table uses DATE (not timestamp)
 
     return ppc ? ppc.reduce((sum, row) => sum + row.cost_micros / 1_000_000, 0) : 0;
   };
