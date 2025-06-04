@@ -24,31 +24,33 @@ export default function LineChartMetrics({ clientId, startDate, endDate }: LineC
   const [groupBy, setGroupBy] = useState<'day' | 'week' | 'month'>('day');
   const [chartData, setChartData] = useState<any[]>([]);
 
+  const nextDay = (dateStr: string) => {
+    const date = new Date(dateStr);
+    date.setDate(date.getDate() + 1);
+    return date.toISOString().split('T')[0];
+  };
+
   useEffect(() => {
     if (!clientId || !startDate || !endDate) return;
 
     async function fetchData() {
-      const { data: clients } = await supabase
+      const { data: sources } = await supabase
         .from('clients_ffs')
         .select('ppc_sources, lsa_sources, seo_sources')
         .eq('client_id', clientId)
         .single();
 
-      const dateStart = `${startDate}T00:00:00`;
-      const dateEnd = `${endDate}T23:59:59`;
-
-      const { data: rows } = await supabase
+      const { data: leads } = await supabase
         .from('hmstr_leads')
         .select('first_qual_date, first_lead_source, hmstr_qualified_lead')
         .eq('client_id', clientId)
-        .gte('first_qual_date', dateStart)
-        .lte('first_qual_date', dateEnd);
+        .eq('hmstr_qualified_lead', true)
+        .gte('first_qual_date', `${startDate}T00:00:00`)
+        .lt('first_qual_date', `${nextDay(endDate)}T00:00:00`);
 
       const grouped: Record<string, any> = {};
 
-      for (const row of rows || []) {
-        if (!row.hmstr_qualified_lead) continue;
-
+      for (const row of leads || []) {
         const date = new Date(row.first_qual_date);
         let key = '';
 
@@ -68,9 +70,9 @@ export default function LineChartMetrics({ clientId, startDate, endDate }: LineC
 
         grouped[key].all++;
 
-        if (clients?.ppc_sources?.includes(row.first_lead_source)) grouped[key].ppc++;
-        if (clients?.lsa_sources?.includes(row.first_lead_source)) grouped[key].lsa++;
-        if (clients?.seo_sources?.includes(row.first_lead_source)) grouped[key].seo++;
+        if (sources?.ppc_sources?.includes(row.first_lead_source)) grouped[key].ppc++;
+        if (sources?.lsa_sources?.includes(row.first_lead_source)) grouped[key].lsa++;
+        if (sources?.seo_sources?.includes(row.first_lead_source)) grouped[key].seo++;
       }
 
       const final = Object.values(grouped).sort((a: any, b: any) => a.date.localeCompare(b.date));
