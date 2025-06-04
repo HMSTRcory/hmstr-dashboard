@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -10,7 +10,7 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  CartesianGrid
+  CartesianGrid,
 } from 'recharts';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
@@ -54,23 +54,23 @@ export default function LineChartCost({ clientId, startDate, endDate }: LineChar
       const { data: ppcSpend } = await supabase
         .from('googleads_campain_data')
         .select('date, cost_micros')
-        .eq('google_ads_customer_id', accountId)
-        .gte('date', dateStart)
-        .lte('date', dateEnd);
+        .eq('client_id', clientId)
+        .gte('date', startDate)
+        .lte('date', endDate);
 
       const { data: lsaSpend } = await supabase
         .from('spend_data_lsa')
         .select('date, spend')
         .eq('client_id', clientId)
-        .gte('date', dateStart)
-        .lte('date', dateEnd);
+        .gte('date', startDate)
+        .lte('date', endDate);
 
       const { data: seoSpend } = await supabase
         .from('spend_data_seo')
         .select('date, spend')
         .eq('client_id', clientId)
-        .gte('date', dateStart)
-        .lte('date', dateEnd);
+        .gte('date', startDate)
+        .lte('date', endDate);
 
       const grouped: Record<string, any> = {};
 
@@ -110,8 +110,8 @@ export default function LineChartCost({ clientId, startDate, endDate }: LineChar
         const key = groupBy === 'day'
           ? spend.date
           : groupBy === 'week'
-          ? new Date(spend.date).toISOString().split('T')[0]
-          : `${new Date(spend.date).getFullYear()}-${(new Date(spend.date).getMonth() + 1).toString().padStart(2, '0')}`;
+            ? new Date(spend.date).toISOString().split('T')[0]
+            : `${new Date(spend.date).getFullYear()}-${(new Date(spend.date).getMonth() + 1).toString().padStart(2, '0')}`;
 
         if (!grouped[key]) grouped[key] = { date: key, all: {}, ppc: {}, lsa: {}, seo: {} };
         grouped[key].all.cost = (grouped[key].all.cost || 0) + spend.cost_micros / 1_000_000;
@@ -122,8 +122,8 @@ export default function LineChartCost({ clientId, startDate, endDate }: LineChar
         const key = groupBy === 'day'
           ? spend.date.split('T')[0]
           : groupBy === 'week'
-          ? new Date(spend.date).toISOString().split('T')[0]
-          : `${new Date(spend.date).getFullYear()}-${(new Date(spend.date).getMonth() + 1).toString().padStart(2, '0')}`;
+            ? new Date(spend.date).toISOString().split('T')[0]
+            : `${new Date(spend.date).getFullYear()}-${(new Date(spend.date).getMonth() + 1).toString().padStart(2, '0')}`;
 
         if (!grouped[key]) grouped[key] = { date: key, all: {}, ppc: {}, lsa: {}, seo: {} };
         grouped[key].all.cost = (grouped[key].all.cost || 0) + spend.spend;
@@ -134,8 +134,8 @@ export default function LineChartCost({ clientId, startDate, endDate }: LineChar
         const key = groupBy === 'day'
           ? spend.date.split('T')[0]
           : groupBy === 'week'
-          ? new Date(spend.date).toISOString().split('T')[0]
-          : `${new Date(spend.date).getFullYear()}-${(new Date(spend.date).getMonth() + 1).toString().padStart(2, '0')}`;
+            ? new Date(spend.date).toISOString().split('T')[0]
+            : `${new Date(spend.date).getFullYear()}-${(new Date(spend.date).getMonth() + 1).toString().padStart(2, '0')}`;
 
         if (!grouped[key]) grouped[key] = { date: key, all: {}, ppc: {}, lsa: {}, seo: {} };
         grouped[key].all.cost = (grouped[key].all.cost || 0) + spend.spend;
