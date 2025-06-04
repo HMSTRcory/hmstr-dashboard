@@ -9,6 +9,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import { nextDay } from '@/lib/utils';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -34,15 +35,10 @@ export default function TopMetrics({
   });
   const [pieData, setPieData] = useState<any[]>([]);
 
-  const nextDay = (dateStr: string) => {
-    const date = new Date(dateStr);
-    date.setDate(date.getDate() + 1);
-    return date.toISOString().split('T')[0];
-  };
-
   const fetchMetrics = async () => {
     if (!clientId || !startDate || !endDate) return;
 
+    // Get source matching arrays
     const { data: sources } = await supabase
       .from('clients_ffs')
       .select('ppc_sources, lsa_sources, seo_sources')
@@ -66,33 +62,31 @@ export default function TopMetrics({
       seo: { count: 0, leadScore: 0, closeScore: 0, costPerQL: 0 },
     };
 
-    leads.forEach((row) => {
+    for (const row of leads) {
       const source = row.first_lead_source;
-      const score = row.lead_score_max || 0;
-      const close = row.close_score_max || 0;
+      const leadScore = row.lead_score_max || 0;
+      const closeScore = row.close_score_max || 0;
 
       result.all.count++;
-      result.all.leadScore += score;
-      result.all.closeScore += close;
+      result.all.leadScore += leadScore;
+      result.all.closeScore += closeScore;
 
       if (sources?.ppc_sources?.includes(source)) {
         result.ppc.count++;
-        result.ppc.leadScore += score;
-        result.ppc.closeScore += close;
+        result.ppc.leadScore += leadScore;
+        result.ppc.closeScore += closeScore;
       }
-
       if (sources?.lsa_sources?.includes(source)) {
         result.lsa.count++;
-        result.lsa.leadScore += score;
-        result.lsa.closeScore += close;
+        result.lsa.leadScore += leadScore;
+        result.lsa.closeScore += closeScore;
       }
-
       if (sources?.seo_sources?.includes(source)) {
         result.seo.count++;
-        result.seo.leadScore += score;
-        result.seo.closeScore += close;
+        result.seo.leadScore += leadScore;
+        result.seo.closeScore += closeScore;
       }
-    });
+    }
 
     const costAll = await getTotalCost(clientId, startDate, endDate);
     const ppcCost = await getTotalPpcCost(clientId, startDate, endDate);
@@ -113,14 +107,14 @@ export default function TopMetrics({
   };
 
   const getTotalCost = async (clientId: number, start: string, end: string) => {
-    const { data: ppc } = await supabase
+    const { data } = await supabase
       .from('googleads_campain_data')
       .select('cost_micros')
-      .eq('google_ads_customer_id', getCustomerId(clientId))
+      .eq('client_id', clientId)
       .gte('date', start)
       .lte('date', end);
 
-    return ppc ? ppc.reduce((sum, row) => sum + row.cost_micros / 1_000_000, 0) : 0;
+    return data ? data.reduce((sum, row) => sum + row.cost_micros / 1_000_000, 0) : 0;
   };
 
   const getTotalPpcCost = async (clientId: number, start: string, end: string) => {
@@ -136,13 +130,6 @@ export default function TopMetrics({
       .lte('date', end);
 
     return data ? data.reduce((sum, row) => sum + row.spend, 0) : 0;
-  };
-
-  const getCustomerId = (clientId: number) => {
-    const map: Record<number, string> = {
-      20: '7957327797',
-    };
-    return map[clientId] || '';
   };
 
   const formatCurrency = (value: number) => {
@@ -168,17 +155,17 @@ export default function TopMetrics({
         <div><strong>Cost/QL (LSA):</strong> {formatCurrency(metrics.lsa.costPerQL || 0)}</div>
         <div><strong>Cost/QL (SEO):</strong> {formatCurrency(metrics.seo.costPerQL || 0)}</div>
 
-        <div><strong>Avg Lead Score:</strong> {(metrics.all.count ? (metrics.all.leadScore / metrics.all.count).toFixed(1) : '0.0')}</div>
-        <div><strong>Avg Sales Score:</strong> {(metrics.all.count ? (metrics.all.closeScore / metrics.all.count).toFixed(1) : '0.0')}</div>
+        <div><strong>Avg Lead Score:</strong> {metrics.all.count ? (metrics.all.leadScore / metrics.all.count).toFixed(1) : '0.0'}</div>
+        <div><strong>Avg Sales Score:</strong> {metrics.all.count ? (metrics.all.closeScore / metrics.all.count).toFixed(1) : '0.0'}</div>
 
-        <div><strong>Avg PPC Lead Score:</strong> {(metrics.ppc.count ? (metrics.ppc.leadScore / metrics.ppc.count).toFixed(1) : '0.0')}</div>
-        <div><strong>Avg PPC Sales Score:</strong> {(metrics.ppc.count ? (metrics.ppc.closeScore / metrics.ppc.count).toFixed(1) : '0.0')}</div>
+        <div><strong>Avg PPC Lead Score:</strong> {metrics.ppc.count ? (metrics.ppc.leadScore / metrics.ppc.count).toFixed(1) : '0.0'}</div>
+        <div><strong>Avg PPC Sales Score:</strong> {metrics.ppc.count ? (metrics.ppc.closeScore / metrics.ppc.count).toFixed(1) : '0.0'}</div>
 
-        <div><strong>Avg LSA Lead Score:</strong> {(metrics.lsa.count ? (metrics.lsa.leadScore / metrics.lsa.count).toFixed(1) : '0.0')}</div>
-        <div><strong>Avg LSA Sales Score:</strong> {(metrics.lsa.count ? (metrics.lsa.closeScore / metrics.lsa.count).toFixed(1) : '0.0')}</div>
+        <div><strong>Avg LSA Lead Score:</strong> {metrics.lsa.count ? (metrics.lsa.leadScore / metrics.lsa.count).toFixed(1) : '0.0'}</div>
+        <div><strong>Avg LSA Sales Score:</strong> {metrics.lsa.count ? (metrics.lsa.closeScore / metrics.lsa.count).toFixed(1) : '0.0'}</div>
 
-        <div><strong>Avg SEO Lead Score:</strong> {(metrics.seo.count ? (metrics.seo.leadScore / metrics.seo.count).toFixed(1) : '0.0')}</div>
-        <div><strong>Avg SEO Sales Score:</strong> {(metrics.seo.count ? (metrics.seo.closeScore / metrics.seo.count).toFixed(1) : '0.0')}</div>
+        <div><strong>Avg SEO Lead Score:</strong> {metrics.seo.count ? (metrics.seo.leadScore / metrics.seo.count).toFixed(1) : '0.0'}</div>
+        <div><strong>Avg SEO Sales Score:</strong> {metrics.seo.count ? (metrics.seo.closeScore / metrics.seo.count).toFixed(1) : '0.0'}</div>
       </div>
 
       <h2 className="text-xl font-bold mt-8 mb-2">Qualified Leads by Source</h2>

@@ -34,7 +34,8 @@ export default function LineChartMetrics({ clientId, startDate, endDate }: LineC
     if (!clientId || !startDate || !endDate) return;
 
     async function fetchData() {
-      const { data: sources } = await supabase
+      // Get the source rules from clients_ffs
+      const { data: clientSources } = await supabase
         .from('clients_ffs')
         .select('ppc_sources, lsa_sources, seo_sources')
         .eq('client_id', clientId)
@@ -42,7 +43,7 @@ export default function LineChartMetrics({ clientId, startDate, endDate }: LineC
 
       const { data: leads } = await supabase
         .from('hmstr_leads')
-        .select('first_qual_date, first_lead_source, hmstr_qualified_lead')
+        .select('first_qual_date, first_lead_source')
         .eq('client_id', clientId)
         .eq('hmstr_qualified_lead', true)
         .gte('first_qual_date', `${startDate}T00:00:00`)
@@ -58,7 +59,7 @@ export default function LineChartMetrics({ clientId, startDate, endDate }: LineC
           key = date.toISOString().split('T')[0];
         } else if (groupBy === 'week') {
           const weekStart = new Date(date);
-          weekStart.setDate(date.getDate() - date.getDay());
+          weekStart.setDate(weekStart.getDate() - weekStart.getDay());
           key = weekStart.toISOString().split('T')[0];
         } else if (groupBy === 'month') {
           key = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
@@ -70,9 +71,9 @@ export default function LineChartMetrics({ clientId, startDate, endDate }: LineC
 
         grouped[key].all++;
 
-        if (sources?.ppc_sources?.includes(row.first_lead_source)) grouped[key].ppc++;
-        if (sources?.lsa_sources?.includes(row.first_lead_source)) grouped[key].lsa++;
-        if (sources?.seo_sources?.includes(row.first_lead_source)) grouped[key].seo++;
+        if (clientSources?.ppc_sources?.includes(row.first_lead_source)) grouped[key].ppc++;
+        if (clientSources?.lsa_sources?.includes(row.first_lead_source)) grouped[key].lsa++;
+        if (clientSources?.seo_sources?.includes(row.first_lead_source)) grouped[key].seo++;
       }
 
       const final = Object.values(grouped).sort((a: any, b: any) => a.date.localeCompare(b.date));

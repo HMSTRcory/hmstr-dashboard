@@ -10,7 +10,7 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  CartesianGrid
+  CartesianGrid,
 } from 'recharts';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
@@ -85,7 +85,7 @@ export default function LineChartCost({ clientId, startDate, endDate }: LineChar
           key = date.toISOString().split('T')[0];
         } else if (groupBy === 'week') {
           const weekStart = new Date(date);
-          weekStart.setDate(date.getDate() - date.getDay());
+          weekStart.setDate(weekStart.getDate() - weekStart.getDay());
           key = weekStart.toISOString().split('T')[0];
         } else if (groupBy === 'month') {
           key = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
@@ -102,7 +102,6 @@ export default function LineChartCost({ clientId, startDate, endDate }: LineChar
         }
 
         grouped[key].all.count++;
-
         if (sources?.ppc_sources?.includes(row.first_lead_source)) grouped[key].ppc.count++;
         if (sources?.lsa_sources?.includes(row.first_lead_source)) grouped[key].lsa.count++;
         if (sources?.seo_sources?.includes(row.first_lead_source)) grouped[key].seo.count++;
