@@ -43,6 +43,12 @@ export default function TopMetrics({
   const fetchMetrics = async () => {
     if (!clientId || !startDate || !endDate) return;
 
+    const { data: sources } = await supabase
+      .from('clients_ffs')
+      .select('ppc_sources, lsa_sources, seo_sources')
+      .eq('client_id', clientId)
+      .single();
+
     const { data: leads, error: leadsError } = await supabase
       .from('hmstr_leads')
       .select('first_qual_date, first_lead_source, lead_score_max, close_score_max')
@@ -69,15 +75,19 @@ export default function TopMetrics({
       result.all.leadScore += score;
       result.all.closeScore += close;
 
-      if (source === 'PPC Pool' || source === 'CTC') {
+      if (sources?.ppc_sources?.includes(source)) {
         result.ppc.count++;
         result.ppc.leadScore += score;
         result.ppc.closeScore += close;
-      } else if (source === 'LSA') {
+      }
+
+      if (sources?.lsa_sources?.includes(source)) {
         result.lsa.count++;
         result.lsa.leadScore += score;
         result.lsa.closeScore += close;
-      } else if (source === 'GMB') {
+      }
+
+      if (sources?.seo_sources?.includes(source)) {
         result.seo.count++;
         result.seo.leadScore += score;
         result.seo.closeScore += close;
@@ -108,7 +118,7 @@ export default function TopMetrics({
       .select('cost_micros')
       .eq('google_ads_customer_id', getCustomerId(clientId))
       .gte('date', start)
-      .lte('date', end); // This table uses DATE (not timestamp)
+      .lte('date', end);
 
     return ppc ? ppc.reduce((sum, row) => sum + row.cost_micros / 1_000_000, 0) : 0;
   };

@@ -11,7 +11,6 @@ import {
   Legend,
   ResponsiveContainer,
   CartesianGrid,
-  Label,
 } from 'recharts';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
@@ -35,12 +34,15 @@ export default function LineChartMetrics({ clientId, startDate, endDate }: LineC
         .eq('client_id', clientId)
         .single();
 
+      const dateStart = `${startDate}T00:00:00`;
+      const dateEnd = `${endDate}T23:59:59`;
+
       const { data: rows } = await supabase
         .from('hmstr_leads')
         .select('first_qual_date, first_lead_source, hmstr_qualified_lead')
         .eq('client_id', clientId)
-        .gte('first_qual_date', startDate)
-        .lte('first_qual_date', endDate);
+        .gte('first_qual_date', dateStart)
+        .lte('first_qual_date', dateEnd);
 
       const grouped: Record<string, any> = {};
 
