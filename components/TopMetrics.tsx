@@ -54,8 +54,8 @@ export default function TopMetrics({
       .select('first_qual_date, first_lead_source, lead_score_max, close_score_max')
       .eq('client_id', clientId)
       .eq('hmstr_qualified_lead', true)
-      .gte('first_qual_date', startDate)
-      .lt('first_qual_date', nextDay(endDate));
+      .gte('first_qual_date', `${startDate}T00:00:00`)
+      .lt('first_qual_date', `${nextDay(endDate)}T00:00:00`);
 
     if (leadsError || !leads) return;
 
