@@ -30,132 +30,28 @@ export default function LineChartCost({ clientId, startDate, endDate }: LineChar
   const [groupBy, setGroupBy] = useState<'day' | 'week' | 'month'>('day');
   const [chartData, setChartData] = useState<any[]>([]);
 
-  const nextDay = (dateStr: string) => {
-    const date = new Date(dateStr);
-    date.setDate(date.getDate() + 1);
-    return date.toISOString().split('T')[0];
-  };
-
   useEffect(() => {
     if (!clientId || !startDate || !endDate) return;
 
     async function fetchData() {
-      const { data: sources } = await supabase
-        .from('clients_ffs')
-        .select('ppc_sources, lsa_sources, seo_sources')
-        .eq('client_id', clientId)
-        .single();
+      const { data, error } = await supabase.rpc('get_cost_line_chart_metrics', {
+        input_client_id: clientId,
+        input_start_date: startDate,
+        input_end_date: endDate,
+        input_group_by: groupBy,
+      });
 
-      const { data: leads } = await supabase
-        .from('hmstr_leads')
-        .select('first_qual_date, first_lead_source, hmstr_qualified_lead')
-        .eq('client_id', clientId)
-        .eq('hmstr_qualified_lead', true)
-        .gte('first_qual_date', `${startDate}T00:00:00`)
-        .lt('first_qual_date', `${nextDay(endDate)}T00:00:00`);
+      if (error || !data) return;
 
-      const { data: ppcSpend } = await supabase
-        .from('googleads_campain_data')
-        .select('date, cost_micros')
-        .eq('client_id', clientId)
-        .gte('date', startDate)
-        .lte('date', endDate);
+      const formatted = data.map((row: any) => ({
+        date: row.date,
+        all: row.cpql_total || 0,
+        ppc: row.cpql_ppc || 0,
+        lsa: row.cpql_lsa || 0,
+        seo: row.cpql_seo || 0,
+      }));
 
-      const { data: lsaSpend } = await supabase
-        .from('spend_data_lsa')
-        .select('date, spend')
-        .eq('client_id', clientId)
-        .gte('date', startDate)
-        .lte('date', endDate);
-
-      const { data: seoSpend } = await supabase
-        .from('spend_data_seo')
-        .select('date, spend')
-        .eq('client_id', clientId)
-        .gte('date', startDate)
-        .lte('date', endDate);
-
-      const grouped: Record<string, any> = {};
-
-      for (const row of leads || []) {
-        const date = new Date(row.first_qual_date);
-        let key = '';
-
-        if (groupBy === 'day') {
-          key = date.toISOString().split('T')[0];
-        } else if (groupBy === 'week') {
-          const weekStart = new Date(date);
-          weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-          key = weekStart.toISOString().split('T')[0];
-        } else if (groupBy === 'month') {
-          key = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-        }
-
-        if (!grouped[key]) {
-          grouped[key] = {
-            date: key,
-            all: { cost: 0, count: 0 },
-            ppc: { cost: 0, count: 0 },
-            lsa: { cost: 0, count: 0 },
-            seo: { cost: 0, count: 0 },
-          };
-        }
-
-        grouped[key].all.count++;
-        if (sources?.ppc_sources?.includes(row.first_lead_source)) grouped[key].ppc.count++;
-        if (sources?.lsa_sources?.includes(row.first_lead_source)) grouped[key].lsa.count++;
-        if (sources?.seo_sources?.includes(row.first_lead_source)) grouped[key].seo.count++;
-      }
-
-      const assignCost = (spend: any, type: 'ppc' | 'lsa' | 'seo', amount: number) => {
-        let key = '';
-
-        if (groupBy === 'day') {
-          key = spend.date;
-        } else if (groupBy === 'week') {
-          const date = new Date(spend.date);
-          date.setDate(date.getDate() - date.getDay());
-          key = date.toISOString().split('T')[0];
-        } else if (groupBy === 'month') {
-          const date = new Date(spend.date);
-          key = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-        }
-
-        if (!grouped[key]) {
-          grouped[key] = {
-            date: key,
-            all: { cost: 0, count: 0 },
-            ppc: { cost: 0, count: 0 },
-            lsa: { cost: 0, count: 0 },
-            seo: { cost: 0, count: 0 },
-          };
-        }
-
-        grouped[key].all.cost += amount;
-        grouped[key][type].cost += amount;
-      };
-
-      for (const spend of ppcSpend || []) {
-        assignCost(spend, 'ppc', spend.cost_micros / 1_000_000);
-      }
-
-      for (const spend of lsaSpend || []) {
-        assignCost(spend, 'lsa', spend.spend);
-      }
-
-      for (const spend of seoSpend || []) {
-        assignCost(spend, 'seo', spend.spend);
-      }
-
-      const result = Object.values(grouped).map((d: any) => ({
-        date: d.date,
-        all: d.all.count ? d.all.cost / d.all.count : 0,
-        ppc: d.ppc.count ? d.ppc.cost / d.ppc.count : 0,
-        lsa: d.lsa.count ? d.lsa.cost / d.lsa.count : 0,
-        seo: d.seo.count ? d.seo.cost / d.seo.count : 0,
-      })).sort((a: any, b: any) => a.date.localeCompare(b.date));
-
-      setChartData(result);
+      setChartData(formatted);
     }
 
     fetchData();
