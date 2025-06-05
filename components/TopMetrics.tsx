@@ -38,7 +38,6 @@ export default function TopMetrics({
   const fetchMetrics = async () => {
     if (!clientId || !startDate || !endDate) return;
 
-    // Get source matching arrays
     const { data: sources } = await supabase
       .from('clients_ffs')
       .select('ppc_sources, lsa_sources, seo_sources')
@@ -117,7 +116,6 @@ export default function TopMetrics({
       .eq('client_id', clientId)
       .gte('date', start)
       .lt('date', nextDay(end));
-
     return data ? data.reduce((sum, row) => sum + row.cost_micros / 1_000_000, 0) : 0;
   };
 
@@ -132,7 +130,6 @@ export default function TopMetrics({
       .eq('client_id', clientId)
       .gte('date', start)
       .lt('date', nextDay(end));
-
     return data ? data.reduce((sum, row) => sum + row.spend, 0) : 0;
   };
 
