@@ -32,13 +32,13 @@ export default function TopMetrics({
     ppc: {},
     lsa: {},
     seo: {},
-    costTotals: { ppc: 0, lsa: 0, seo: 0 },
   });
   const [pieData, setPieData] = useState<any[]>([]);
 
   const fetchMetrics = async () => {
     if (!clientId || !startDate || !endDate) return;
 
+    // Get source matching arrays
     const { data: sources } = await supabase
       .from('clients_ffs')
       .select('ppc_sources, lsa_sources, seo_sources')
@@ -57,10 +57,9 @@ export default function TopMetrics({
 
     const result = {
       all: { count: 0, leadScore: 0, closeScore: 0, costPerQL: 0 },
-      ppc: { count: 0, leadScore: 0, closeScore: 0, costPerQL: 0 },
-      lsa: { count: 0, leadScore: 0, closeScore: 0, costPerQL: 0 },
-      seo: { count: 0, leadScore: 0, closeScore: 0, costPerQL: 0 },
-      costTotals: { ppc: 0, lsa: 0, seo: 0 },
+      ppc: { count: 0, leadScore: 0, closeScore: 0, costPerQL: 0, totalCost: 0 },
+      lsa: { count: 0, leadScore: 0, closeScore: 0, costPerQL: 0, totalCost: 0 },
+      seo: { count: 0, leadScore: 0, closeScore: 0, costPerQL: 0, totalCost: 0 },
     };
 
     for (const row of leads) {
@@ -89,16 +88,16 @@ export default function TopMetrics({
       }
     }
 
+    const costAll = await getTotalCost(clientId, startDate, endDate);
     const ppcCost = await getTotalPpcCost(clientId, startDate, endDate);
     const lsaCost = await getSpendData('spend_data_lsa', clientId, startDate, endDate);
     const seoCost = await getSpendData('spend_data_seo', clientId, startDate, endDate);
-    const totalCost = ppcCost + lsaCost + seoCost;
 
-    result.costTotals.ppc = ppcCost;
-    result.costTotals.lsa = lsaCost;
-    result.costTotals.seo = seoCost;
+    result.ppc.totalCost = ppcCost;
+    result.lsa.totalCost = lsaCost;
+    result.seo.totalCost = seoCost;
 
-    result.all.costPerQL = result.all.count ? totalCost / result.all.count : 0;
+    result.all.costPerQL = result.all.count ? costAll / result.all.count : 0;
     result.ppc.costPerQL = result.ppc.count ? ppcCost / result.ppc.count : 0;
     result.lsa.costPerQL = result.lsa.count ? lsaCost / result.lsa.count : 0;
     result.seo.costPerQL = result.seo.count ? seoCost / result.seo.count : 0;
@@ -117,7 +116,7 @@ export default function TopMetrics({
       .select('cost_micros')
       .eq('client_id', clientId)
       .gte('date', start)
-      .lte('date', end);
+      .lt('date', nextDay(end));
 
     return data ? data.reduce((sum, row) => sum + row.cost_micros / 1_000_000, 0) : 0;
   };
@@ -132,7 +131,7 @@ export default function TopMetrics({
       .select('spend')
       .eq('client_id', clientId)
       .gte('date', start)
-      .lte('date', end);
+      .lt('date', nextDay(end));
 
     return data ? data.reduce((sum, row) => sum + row.spend, 0) : 0;
   };
@@ -160,6 +159,10 @@ export default function TopMetrics({
         <div><strong>Cost/QL (LSA):</strong> {formatCurrency(metrics.lsa.costPerQL || 0)}</div>
         <div><strong>Cost/QL (SEO):</strong> {formatCurrency(metrics.seo.costPerQL || 0)}</div>
 
+        <div><strong>PPC Cost Total:</strong> {formatCurrency(metrics.ppc.totalCost || 0)}</div>
+        <div><strong>LSA Cost Total:</strong> {formatCurrency(metrics.lsa.totalCost || 0)}</div>
+        <div><strong>SEO Cost Total:</strong> {formatCurrency(metrics.seo.totalCost || 0)}</div>
+
         <div><strong>Avg Lead Score:</strong> {metrics.all.count ? (metrics.all.leadScore / metrics.all.count).toFixed(1) : '0.0'}</div>
         <div><strong>Avg Sales Score:</strong> {metrics.all.count ? (metrics.all.closeScore / metrics.all.count).toFixed(1) : '0.0'}</div>
 
@@ -171,10 +174,6 @@ export default function TopMetrics({
 
         <div><strong>Avg SEO Lead Score:</strong> {metrics.seo.count ? (metrics.seo.leadScore / metrics.seo.count).toFixed(1) : '0.0'}</div>
         <div><strong>Avg SEO Sales Score:</strong> {metrics.seo.count ? (metrics.seo.closeScore / metrics.seo.count).toFixed(1) : '0.0'}</div>
-
-        <div><strong>PPC Cost Total:</strong> {formatCurrency(metrics.costTotals.ppc)}</div>
-        <div><strong>LSA Cost Total:</strong> {formatCurrency(metrics.costTotals.lsa)}</div>
-        <div><strong>SEO Cost Total:</strong> {formatCurrency(metrics.costTotals.seo)}</div>
       </div>
 
       <h2 className="text-xl font-bold mt-8 mb-2">Qualified Leads by Source</h2>
