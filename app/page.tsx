@@ -13,6 +13,7 @@ export default function DashboardPage() {
   const [selectedClient, setSelectedClient] = useState<number | null>(null);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [groupBy, setGroupBy] = useState<'day' | 'week' | 'month'>('month');
 
   useEffect(() => {
     async function loadClients() {
@@ -32,7 +33,6 @@ export default function DashboardPage() {
 
     loadClients();
 
-    // Default to last 30 days
     const now = new Date();
     const past = new Date();
     past.setDate(now.getDate() - 30);
@@ -40,8 +40,8 @@ export default function DashboardPage() {
     setEndDate(now);
   }, []);
 
-  const start = startDate?.toLocaleDateString('en-CA') ?? '';
-  const end = endDate?.toLocaleDateString('en-CA') ?? '';
+  const start = startDate?.toISOString().split('T')[0] ?? '';
+  const end = endDate?.toISOString().split('T')[0] ?? '';
 
   return (
     <Shell>
@@ -58,11 +58,25 @@ export default function DashboardPage() {
           onEndDateChange={setEndDate}
         />
 
+        {/* Optional GroupBy Selector */}
+        <div className="my-4">
+          <label className="mr-2 font-medium">Group By:</label>
+          <select
+            className="border rounded px-2 py-1"
+            value={groupBy}
+            onChange={(e) => setGroupBy(e.target.value as 'day' | 'week' | 'month')}
+          >
+            <option value="day">Day</option>
+            <option value="week">Week</option>
+            <option value="month">Month</option>
+          </select>
+        </div>
+
         {selectedClient && start && end && (
           <>
             <TopMetrics clientId={selectedClient} startDate={start} endDate={end} />
-            <LineChartMetrics clientId={selectedClient} startDate={start} endDate={end} />
-            <LineChartCost clientId={selectedClient} startDate={start} endDate={end} />
+            <LineChartMetrics clientId={selectedClient} startDate={start} endDate={end} groupBy={groupBy} />
+            <LineChartCost clientId={selectedClient} startDate={start} endDate={end} groupBy={groupBy} />
           </>
         )}
       </div>
