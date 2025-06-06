@@ -28,27 +28,27 @@ export default function TopMetrics({
 }) {
   const [data, setData] = useState<any>(null);
 
-  const fetchMetrics = async () => {
+  useEffect(() => {
     if (!clientId || !startDate || !endDate) return;
 
-    const { data, error } = await supabase.rpc('get_top_metrics', {
-      input_client_id: clientId,
-      input_start_date: startDate,
-      input_end_date: endDate,
-    });
+    const fetchMetrics = async () => {
+      const { data, error } = await supabase.rpc('get_top_metrics', {
+        input_client_id: clientId,
+        input_start_date: startDate,
+        input_end_date: endDate,
+      });
 
-    if (error || !data || !data[0]) return;
-    setData(data[0]);
-  };
+      if (error || !data || !data[0]) return;
+      setData(data[0]);
+    };
+
+    fetchMetrics();
+  }, [clientId, startDate, endDate]);
 
   const formatCurrency = (value: number | string) => {
     const n = typeof value === 'string' ? parseFloat(value) : value;
     return `$${(n || 0).toFixed(2)}`;
   };
-
-  useEffect(() => {
-    fetchMetrics();
-  }, [clientId, startDate, endDate]);
 
   if (!data) return null;
 
