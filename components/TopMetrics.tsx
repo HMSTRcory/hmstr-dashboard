@@ -79,9 +79,7 @@ export default function TopMetrics({
       },
     };
 
-    // Note: Score data still pulled separately if needed — pending next RPC
     setMetrics(result);
-
     setPieData([
       { name: 'PPC', value: result.ppc.count },
       { name: 'LSA', value: result.lsa.count },
