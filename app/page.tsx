@@ -33,7 +33,6 @@ export default function DashboardPage() {
               mode="single"
               selected={startDate}
               onSelect={setStartDate}
-              initialFocus
             />
           </PopoverContent>
         </Popover>
@@ -50,7 +49,6 @@ export default function DashboardPage() {
               mode="single"
               selected={endDate}
               onSelect={setEndDate}
-              initialFocus
             />
           </PopoverContent>
         </Popover>
