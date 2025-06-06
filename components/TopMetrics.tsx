@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Separator } from './ui/separator';
-import { get_spc_metrics_by_channel, get_spc_cost_by_channel } from '../lib/queries';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { get_spc_metrics_by_channel, get_spc_cost_by_channel } from '@/lib/queries';
 import { format } from 'date-fns';
 
 type Metrics = {
