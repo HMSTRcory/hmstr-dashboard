@@ -13,7 +13,6 @@ export default function DashboardPage() {
   const [selectedClient, setSelectedClient] = useState<number | null>(null);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-  const [groupBy, setGroupBy] = useState<'day' | 'week' | 'month'>('month');
 
   useEffect(() => {
     async function loadClients() {
@@ -33,15 +32,13 @@ export default function DashboardPage() {
 
     loadClients();
 
+    // Default to last 30 days
     const now = new Date();
     const past = new Date();
     past.setDate(now.getDate() - 30);
     setStartDate(past);
     setEndDate(now);
   }, []);
-
-  const start = startDate?.toISOString().split('T')[0] ?? '';
-  const end = endDate?.toISOString().split('T')[0] ?? '';
 
   return (
     <Shell>
@@ -58,11 +55,25 @@ export default function DashboardPage() {
           onEndDateChange={setEndDate}
         />
 
-        {selectedClient && start && end && (
+        {selectedClient && startDate && endDate && (
           <>
-            <TopMetrics clientId={selectedClient} startDate={start} endDate={end} />
-            <LineChartMetrics clientId={selectedClient} startDate={start} endDate={end} groupBy={groupBy} />
-            <LineChartCost clientId={selectedClient} startDate={start} endDate={end} groupBy={groupBy} />
+            <TopMetrics
+              clientId={selectedClient}
+              startDate={startDate.toISOString().split('T')[0]}
+              endDate={endDate.toISOString().split('T')[0]}
+            />
+            <LineChartMetrics
+              clientId={selectedClient}
+              startDate={startDate.toISOString().split('T')[0]}
+              endDate={endDate.toISOString().split('T')[0]}
+              groupBy="month"
+            />
+            <LineChartCost
+              clientId={selectedClient}
+              startDate={startDate.toISOString().split('T')[0]}
+              endDate={endDate.toISOString().split('T')[0]}
+              groupBy="month"
+            />
           </>
         )}
       </div>

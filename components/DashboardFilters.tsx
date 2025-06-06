@@ -1,8 +1,8 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
-import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import {
@@ -11,6 +11,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 interface DashboardFiltersProps {
   clients: { id: number; name: string }[];
