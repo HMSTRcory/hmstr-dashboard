@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Separator } from '@/components/ui/separator';
 import TopMetrics from '@/components/TopMetrics';
 import DashboardFilters from '@/components/DashboardFilters';
-import { createClient } from '@/lib/supabaseClient';
+import supabase from '@/lib/supabaseClient'; // ✅ FIXED: default import
 
 export default function DashboardPage() {
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
@@ -15,7 +15,6 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const fetchClients = async () => {
-      const supabase = createClient();
       const { data, error } = await supabase
         .from('clients_ffs')
         .select('cr_client_id, cr_company_name')

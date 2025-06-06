@@ -2,72 +2,72 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export async function get_spc_metrics_by_channel(
   clientId: string,
   startDate: string,
   endDate: string
-) {
-  const { data: clientData, error: clientError } = await supabase
-    .from('clients_ffs')
-    .select('ppc_sources, lsa_sources, seo_sources')
-    .eq('cr_client_id', clientId)
-    .single();
+): Promise<any> {
+  const sources = ['ppc', 'lsa', 'seo'];
 
-  if (clientError || !clientData) {
-    console.error('Error fetching client sources:', clientError);
-    return null;
-  }
-
-  const { ppc_sources, lsa_sources, seo_sources } = clientData;
-
-  const { data: leads, error: leadsError } = await supabase
+  const response = await supabase
     .from('hmstr_leads')
-    .select('source, lead_score_max, close_score_max')
-    .eq('cr_client_id', clientId)
+    .select('lead_score_max, close_score_max, source')
+    .eq('client_id', clientId)
     .gte('last_qual_date', startDate)
     .lte('last_qual_date', endDate);
 
-  if (leadsError || !leads) {
-    console.error('Error fetching leads:', leadsError);
+  if (response.error) {
+    console.error('Error fetching metrics:', response.error);
     return null;
   }
 
-  const buckets: {
-    [key in 'ppc' | 'lsa' | 'seo' | 'other']: {
-      leads: number;
-      totalLeadScore: number;
-      totalCloseScore: number;
-    };
-  } = {
-    ppc: { leads: 0, totalLeadScore: 0, totalCloseScore: 0 },
-    lsa: { leads: 0, totalLeadScore: 0, totalCloseScore: 0 },
-    seo: { leads: 0, totalLeadScore: 0, totalCloseScore: 0 },
-    other: { leads: 0, totalLeadScore: 0, totalCloseScore: 0 },
+  const rows = response.data ?? [];
+
+  const channelData = {
+    ppc: [],
+    lsa: [],
+    seo: [],
+    other: [],
   };
 
-  for (const lead of leads) {
-    const { source, lead_score_max, close_score_max } = lead;
-    let bucket: keyof typeof buckets = 'other';
+  for (const row of rows) {
+    const source: string = row.source;
+    const leadScore = row.lead_score_max ?? 0;
+    const closeScore = row.close_score_max ?? 0;
 
-    if (ppc_sources.includes(source)) bucket = 'ppc';
-    else if (lsa_sources.includes(source)) bucket = 'lsa';
-    else if (seo_sources.includes(source)) bucket = 'seo';
+    const channel =
+      sources.find((src) => source.toLowerCase().includes(src)) ?? 'other';
 
-    buckets[bucket].leads += 1;
-    buckets[bucket].totalLeadScore += lead_score_max ?? 0;
-    buckets[bucket].totalCloseScore += close_score_max ?? 0;
+    channelData[channel].push({ leadScore, closeScore });
   }
 
-  const result = Object.entries(buckets).map(([channel, data]) => ({
-    channel,
-    leads: data.leads,
-    avgLeadScore:
-      data.leads > 0 ? parseFloat((data.totalLeadScore / data.leads).toFixed(1)) : 0,
-    avgCloseScore:
-      data.leads > 0 ? parseFloat((data.totalCloseScore / data.leads).toFixed(1)) : 0,
-  }));
+  const result: Record<
+    string,
+    { total: number; avg_lead: number; avg_close: number }
+  > = {};
+
+  for (const channel of Object.keys(channelData)) {
+    const leads = channelData[channel];
+    const total = leads.length;
+
+    const avg_lead =
+      total > 0
+        ? leads.reduce((sum, r) => sum + r.leadScore, 0) / total
+        : 0;
+    const avg_close =
+      total > 0
+        ? leads.reduce((sum, r) => sum + r.closeScore, 0) / total
+        : 0;
+
+    result[channel] = {
+      total,
+      avg_lead: Math.round(avg_lead * 10) / 10,
+      avg_close: Math.round(avg_close * 10) / 10,
+    };
+  }
 
   return result;
 }
