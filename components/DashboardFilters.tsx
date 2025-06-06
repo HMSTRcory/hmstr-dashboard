@@ -11,7 +11,6 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
 
 interface DashboardFiltersProps {
   clients: { id: number; name: string }[];
@@ -21,6 +20,8 @@ interface DashboardFiltersProps {
   endDate: Date | undefined;
   onStartDateChange: (date: Date | undefined) => void;
   onEndDateChange: (date: Date | undefined) => void;
+  groupBy: 'day' | 'week' | 'month';
+  onGroupByChange: (value: 'day' | 'week' | 'month') => void;
 }
 
 function DashboardFilters({
@@ -31,6 +32,8 @@ function DashboardFilters({
   endDate,
   onStartDateChange,
   onEndDateChange,
+  groupBy,
+  onGroupByChange,
 }: DashboardFiltersProps) {
   function setRange(days: number) {
     const now = new Date();
@@ -77,11 +80,7 @@ function DashboardFilters({
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0">
-            <Calendar
-              mode="single"
-              selected={startDate}
-              onSelect={onStartDateChange}
-            />
+            <Calendar mode="single" selected={startDate} onSelect={onStartDateChange} />
           </PopoverContent>
         </Popover>
 
@@ -93,29 +92,32 @@ function DashboardFilters({
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0">
-            <Calendar
-              mode="single"
-              selected={endDate}
-              onSelect={onEndDateChange}
-            />
+            <Calendar mode="single" selected={endDate} onSelect={onEndDateChange} />
           </PopoverContent>
         </Popover>
       </div>
 
-      {/* Quick Range Buttons */}
+      {/* Group By Selector */}
+      <div className="flex items-center gap-2">
+        <Label htmlFor="groupBy">Group By:</Label>
+        <select
+          id="groupBy"
+          value={groupBy}
+          onChange={(e) => onGroupByChange(e.target.value as 'day' | 'week' | 'month')}
+          className="border border-gray-300 rounded px-2 py-1 text-sm"
+        >
+          <option value="day">Day</option>
+          <option value="week">Week</option>
+          <option value="month">Month</option>
+        </select>
+      </div>
+
+      {/* Quick Ranges */}
       <div className="flex gap-2 flex-wrap">
-        <Button variant="default" onClick={() => setRange(7)}>
-          Last 7 Days
-        </Button>
-        <Button variant="default" onClick={() => setRange(30)}>
-          Last 30 Days
-        </Button>
-        <Button variant="default" onClick={() => setRange(90)}>
-          Last 90 Days
-        </Button>
-        <Button variant="default" onClick={setLastMonth}>
-          Last Month
-        </Button>
+        <Button variant="default" onClick={() => setRange(7)}>Last 7 Days</Button>
+        <Button variant="default" onClick={() => setRange(30)}>Last 30 Days</Button>
+        <Button variant="default" onClick={() => setRange(90)}>Last 90 Days</Button>
+        <Button variant="default" onClick={setLastMonth}>Last Month</Button>
       </div>
     </div>
   );
