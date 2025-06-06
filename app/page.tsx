@@ -40,8 +40,8 @@ export default function DashboardPage() {
     setEndDate(now);
   }, []);
 
-  const start = startDate?.toISOString().split('T')[0] ?? '';
-  const end = endDate?.toISOString().split('T')[0] ?? '';
+  const start = startDate?.toLocaleDateString('en-CA') ?? '';
+  const end = endDate?.toLocaleDateString('en-CA') ?? '';
 
   return (
     <Shell>
