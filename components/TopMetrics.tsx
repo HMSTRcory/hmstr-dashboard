@@ -1,16 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { get_spc_metrics_by_channel, get_spc_cost_by_channel } from '@/lib/queries';
-import { Separator } from '@/components/ui/separator';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Separator } from './ui/separator';
+import { get_spc_metrics_by_channel, get_spc_cost_by_channel } from '../lib/queries';
 import { format } from 'date-fns';
 
 type Metrics = {
   count: number;
   leadScore: number;
   closeScore: number;
-  costPerQL?: number;
 };
 
 type Source = 'all' | 'ppc' | 'lsa' | 'seo';
@@ -41,34 +40,34 @@ export default function TopMetrics({ clientId, startDate, endDate }: Props) {
   useEffect(() => {
     if (!clientId || !startDate || !endDate) return;
 
-    const fetchMetrics = async () => {
-      const [metricsByChannel, costByChannel] = await Promise.all([
+    const fetchData = async () => {
+      const [metricData, costData] = await Promise.all([
         get_spc_metrics_by_channel(clientId, startDate, endDate),
         get_spc_cost_by_channel(clientId, startDate, endDate),
       ]);
-
-      setMetrics(metricsByChannel);
-      setCost(costByChannel);
+      setMetrics(metricData);
+      setCost(costData);
     };
 
-    fetchMetrics();
+    fetchData();
   }, [clientId, startDate, endDate]);
 
-  const displayCurrency = (amount: number) => {
-    return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-  };
+  const formatCurrency = (amount: number) =>
+    amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 
-  const displayNumber = (n: number) => n.toFixed(1);
+  const formatScore = (total: number, count: number) =>
+    count > 0 ? (total / count).toFixed(1) : '0.0';
 
   return (
     <div className="grid gap-4">
       <p className="text-sm text-muted-foreground mb-4">
-        Showing data from <strong>{format(new Date(startDate), 'MMM d, yyyy')}</strong> to <strong>{format(new Date(endDate), 'MMM d, yyyy')}</strong>
+        Showing data from <strong>{format(new Date(startDate), 'MMM d, yyyy')}</strong> to{' '}
+        <strong>{format(new Date(endDate), 'MMM d, yyyy')}</strong>
       </p>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {sources.map(source => (
-          <Card key={`count-${source}`}>
+        {sources.map((source) => (
+          <Card key={`qlead-${source}`}>
             <CardHeader>
               <CardTitle>{source.toUpperCase()} QLeads</CardTitle>
             </CardHeader>
@@ -82,27 +81,29 @@ export default function TopMetrics({ clientId, startDate, endDate }: Props) {
       <Separator />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {sources.map(source => (
+        {sources.map((source) => (
           <Card key={`cost-${source}`}>
             <CardHeader>
               <CardTitle>Total Cost ({source.toUpperCase()})</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">{displayCurrency(cost[source])}</p>
+              <p className="text-2xl font-bold">{formatCurrency(cost[source])}</p>
             </CardContent>
           </Card>
         ))}
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {sources.map(source => (
-          <Card key={`cpq-${source}`}>
+        {sources.map((source) => (
+          <Card key={`cost-per-${source}`}>
             <CardHeader>
               <CardTitle>Cost/QL ({source.toUpperCase()})</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold">
-                {metrics[source].count > 0 ? displayCurrency(cost[source] / metrics[source].count) : '$0.00'}
+                {metrics[source].count > 0
+                  ? formatCurrency(cost[source] / metrics[source].count)
+                  : '$0.00'}
               </p>
             </CardContent>
           </Card>
@@ -112,14 +113,14 @@ export default function TopMetrics({ clientId, startDate, endDate }: Props) {
       <Separator />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {sources.map(source => (
+        {sources.map((source) => (
           <Card key={`leadscore-${source}`}>
             <CardHeader>
               <CardTitle>Avg Lead Score ({source.toUpperCase()})</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold">
-                {metrics[source].count > 0 ? displayNumber(metrics[source].leadScore / metrics[source].count) : '0.0'}
+                {formatScore(metrics[source].leadScore, metrics[source].count)}
               </p>
             </CardContent>
           </Card>
@@ -127,14 +128,14 @@ export default function TopMetrics({ clientId, startDate, endDate }: Props) {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {sources.map(source => (
+        {sources.map((source) => (
           <Card key={`closescore-${source}`}>
             <CardHeader>
               <CardTitle>Avg Sales Score ({source.toUpperCase()})</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold">
-                {metrics[source].count > 0 ? displayNumber(metrics[source].closeScore / metrics[source].count) : '0.0'}
+                {formatScore(metrics[source].closeScore, metrics[source].count)}
               </p>
             </CardContent>
           </Card>
