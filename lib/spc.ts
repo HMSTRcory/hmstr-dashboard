@@ -1,4 +1,4 @@
-export function getSPC(
+export function spc(
   source: string,
   ppcSources: string[],
   lsaSources: string[],
