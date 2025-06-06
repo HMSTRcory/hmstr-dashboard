@@ -58,20 +58,6 @@ export default function DashboardPage() {
           onEndDateChange={setEndDate}
         />
 
-        {/* Optional GroupBy Selector */}
-        <div className="my-4">
-          <label className="mr-2 font-medium">Group By:</label>
-          <select
-            className="border rounded px-2 py-1"
-            value={groupBy}
-            onChange={(e) => setGroupBy(e.target.value as 'day' | 'week' | 'month')}
-          >
-            <option value="day">Day</option>
-            <option value="week">Week</option>
-            <option value="month">Month</option>
-          </select>
-        </div>
-
         {selectedClient && start && end && (
           <>
             <TopMetrics clientId={selectedClient} startDate={start} endDate={end} />
