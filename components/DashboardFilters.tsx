@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -21,7 +20,7 @@ interface DashboardFiltersProps {
   onStartDateChange: (date: Date | undefined) => void;
   onEndDateChange: (date: Date | undefined) => void;
   groupBy: 'day' | 'week' | 'month';
-  onGroupByChange: (value: 'day' | 'week' | 'month') => void;
+  onGroupByChange: (g: 'day' | 'week' | 'month') => void;
 }
 
 function DashboardFilters({
@@ -35,24 +34,8 @@ function DashboardFilters({
   groupBy,
   onGroupByChange,
 }: DashboardFiltersProps) {
-  function setRange(days: number) {
-    const now = new Date();
-    const past = new Date();
-    past.setDate(now.getDate() - days);
-    onStartDateChange(past);
-    onEndDateChange(now);
-  }
-
-  function setLastMonth() {
-    const now = new Date();
-    const firstDay = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const lastDay = new Date(now.getFullYear(), now.getMonth(), 0);
-    onStartDateChange(firstDay);
-    onEndDateChange(lastDay);
-  }
-
   return (
-    <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
+    <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6 flex-wrap">
       {/* Client Selector */}
       <div className="flex items-center gap-2">
         <Label htmlFor="client">Client:</Label>
@@ -80,7 +63,11 @@ function DashboardFilters({
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0">
-            <Calendar mode="single" selected={startDate} onSelect={onStartDateChange} />
+            <Calendar
+              mode="single"
+              selected={startDate}
+              onSelect={onStartDateChange}
+            />
           </PopoverContent>
         </Popover>
 
@@ -92,16 +79,19 @@ function DashboardFilters({
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0">
-            <Calendar mode="single" selected={endDate} onSelect={onEndDateChange} />
+            <Calendar
+              mode="single"
+              selected={endDate}
+              onSelect={onEndDateChange}
+            />
           </PopoverContent>
         </Popover>
       </div>
 
-      {/* Group By Selector */}
+      {/* Group By */}
       <div className="flex items-center gap-2">
-        <Label htmlFor="groupBy">Group By:</Label>
+        <Label>Group By:</Label>
         <select
-          id="groupBy"
           value={groupBy}
           onChange={(e) => onGroupByChange(e.target.value as 'day' | 'week' | 'month')}
           className="border border-gray-300 rounded px-2 py-1 text-sm"
@@ -110,14 +100,6 @@ function DashboardFilters({
           <option value="week">Week</option>
           <option value="month">Month</option>
         </select>
-      </div>
-
-      {/* Quick Ranges */}
-      <div className="flex gap-2 flex-wrap">
-        <Button variant="default" onClick={() => setRange(7)}>Last 7 Days</Button>
-        <Button variant="default" onClick={() => setRange(30)}>Last 30 Days</Button>
-        <Button variant="default" onClick={() => setRange(90)}>Last 90 Days</Button>
-        <Button variant="default" onClick={setLastMonth}>Last Month</Button>
       </div>
     </div>
   );
