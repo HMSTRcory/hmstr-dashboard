@@ -1,4 +1,5 @@
-export function spc(
+// lib/spc.ts
+export function getSPC(
   source: string,
   ppcSources: string[],
   lsaSources: string[],
