@@ -16,6 +16,12 @@ interface TopMetricsProps {
   endDate: string;
 }
 
+interface Lead {
+  source: string;
+  lead_score_max: number | null;
+  close_score_max: number | null;
+}
+
 export default function TopMetrics({ clientId, startDate, endDate }: TopMetricsProps) {
   const [metrics, setMetrics] = useState<Metric[]>([]);
 
@@ -52,7 +58,7 @@ export default function TopMetrics({ clientId, startDate, endDate }: TopMetricsP
         seo: [] as number[],
       };
 
-      leads?.forEach((lead) => {
+      leads?.forEach((lead: Lead) => {
         const spc = getSPC(lead.source, ppcSources, lsaSources, seoSources);
         const ls = lead.lead_score_max ?? 0;
         const cs = lead.close_score_max ?? 0;
@@ -75,7 +81,7 @@ export default function TopMetrics({ clientId, startDate, endDate }: TopMetricsP
       const lsaCount = sourceBuckets.lsa.length;
       const seoCount = sourceBuckets.seo.length;
 
-      const cost = { all: 0, ppc: 0, lsa: 0, seo: 0 }; // Add real spend logic here if needed
+      const cost = { all: 0, ppc: 0, lsa: 0, seo: 0 }; // You can replace with real spend logic
 
       const metricsData: Metric[] = [
         { label: 'All QLeads', value: allCount },

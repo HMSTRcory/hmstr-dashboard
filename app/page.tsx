@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Separator } from '@/components/ui/separator';
 import TopMetrics from '@/components/TopMetrics';
 import DashboardFilters from '@/components/DashboardFilters';
-import supabase from '@/lib/supabaseClient'; // ✅ FIXED: default import
+import { supabase } from '@/lib/supabaseClient';
 
 export default function DashboardPage() {
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
