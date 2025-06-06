@@ -17,19 +17,12 @@ const supabase = createClient(
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b'];
 
-export default function TopMetrics({
-  clientId,
-  startDate,
-  endDate,
-}: {
-  clientId: number;
-  startDate: string;
-  endDate: string;
-}) {
+export default function TopMetrics({ clientId }: { clientId: number }) {
   const [data, setData] = useState<any>(null);
 
   const fetchMetrics = async () => {
-    if (!clientId || !startDate || !endDate) return;
+    const startDate = '2025-01-01';
+    const endDate = '2025-05-31';
 
     const { data, error } = await supabase.rpc('get_top_metrics', {
       input_client_id: clientId,
@@ -37,9 +30,12 @@ export default function TopMetrics({
       input_end_date: endDate,
     });
 
-    if (error || !data || !data[0]) return;
+    if (error || !data || !data[0]) {
+      console.error('RPC Error:', error);
+      return;
+    }
 
-    console.log('TopMetrics RPC data:', data[0]); // Debugging
+    console.log('Hardcoded RPC Result:', data[0]); // DEBUG
     setData(data[0]);
   };
 
@@ -49,14 +45,14 @@ export default function TopMetrics({
   };
 
   useEffect(() => {
-    fetchMetrics();
-  }, [clientId, startDate, endDate]);
+    if (clientId) fetchMetrics();
+  }, [clientId]);
 
-  if (!data) return null;
+  if (!data) return <div className="p-6">Loading Top Metrics...</div>;
 
   return (
     <div className="p-6">
-      <h2 className="text-xl font-bold mb-4">Top Metrics</h2>
+      <h2 className="text-xl font-bold mb-4">Top Metrics (Hardcoded Dates)</h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
         <div><strong>All QLeads:</strong> {data.qualified_leads}</div>
