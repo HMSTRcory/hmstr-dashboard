@@ -33,7 +33,6 @@ export default function DashboardPage() {
 
     loadClients();
 
-    // Default to last 30 days
     const now = new Date();
     const past = new Date();
     past.setDate(now.getDate() - 30);
@@ -41,8 +40,8 @@ export default function DashboardPage() {
     setEndDate(now);
   }, []);
 
-  const start = startDate?.toLocaleDateString('en-CA') ?? '';
-  const end = endDate?.toLocaleDateString('en-CA') ?? '';
+  const start = startDate?.toISOString().split('T')[0] ?? '';
+  const end = endDate?.toISOString().split('T')[0] ?? '';
 
   return (
     <Shell>
@@ -57,6 +56,8 @@ export default function DashboardPage() {
           endDate={endDate}
           onStartDateChange={setStartDate}
           onEndDateChange={setEndDate}
+          groupBy={groupBy}
+          onGroupByChange={setGroupBy}
         />
 
         {selectedClient && start && end && (
