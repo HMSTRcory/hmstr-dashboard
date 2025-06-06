@@ -3,8 +3,6 @@
 import { useEffect, useState } from 'react';
 import Shell from '@/components/layouts/Shell';
 import TopMetrics from '@/components/TopMetrics';
-import LineChartMetrics from '@/components/LineChartMetrics';
-import LineChartCost from '@/components/LineChartCost';
 import DashboardFilters from '@/components/DashboardFilters';
 import { supabase } from '@/lib/supabase';
 
@@ -52,25 +50,11 @@ export default function DashboardPage() {
         />
 
         {selectedClient && startDate && endDate && (
-          <>
-            <TopMetrics
-              clientId={selectedClient}
-              startDate={startDate.toISOString().split('T')[0]}
-              endDate={endDate.toISOString().split('T')[0]}
-            />
-            <LineChartMetrics
-              clientId={selectedClient}
-              startDate={startDate.toISOString().split('T')[0]}
-              endDate={endDate.toISOString().split('T')[0]}
-              groupBy={groupBy}
-            />
-            <LineChartCost
-              clientId={selectedClient}
-              startDate={startDate.toISOString().split('T')[0]}
-              endDate={endDate.toISOString().split('T')[0]}
-              groupBy={groupBy}
-            />
-          </>
+          <TopMetrics
+            clientId={selectedClient}
+            startDate={startDate.toISOString().split('T')[0]}
+            endDate={endDate.toISOString().split('T')[0]}
+          />
         )}
       </div>
     </Shell>
