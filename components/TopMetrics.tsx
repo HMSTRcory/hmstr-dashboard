@@ -17,6 +17,25 @@ const supabase = createClient(
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b'];
 
+interface Metric {
+  count: number;
+  leadScore: number;
+  closeScore: number;
+  costPerQL?: number;
+}
+
+interface AllMetrics {
+  all: Metric;
+  ppc: Metric;
+  lsa: Metric;
+  seo: Metric;
+}
+
+interface PieDatum {
+  name: string;
+  value: number;
+}
+
 export default function TopMetrics({
   clientId,
   startDate,
@@ -26,81 +45,20 @@ export default function TopMetrics({
   startDate: string;
   endDate: string;
 }) {
-  const [metrics, setMetrics] = useState<any>({
-    all: {},
-    ppc: {},
-    lsa: {},
-    seo: {},
+  const [metrics, setMetrics] = useState<AllMetrics>({
+    all: { count: 0, leadScore: 0, closeScore: 0 },
+    ppc: { count: 0, leadScore: 0, closeScore: 0 },
+    lsa: { count: 0, leadScore: 0, closeScore: 0 },
+    seo: { count: 0, leadScore: 0, closeScore: 0 },
   });
-  const [pieData, setPieData] = useState<any[]>([]);
-  const [costs, setCosts] = useState({
+
+  const [pieData, setPieData] = useState<PieDatum[]>([]);
+  const [costs, setCosts] = useState<{ all: number; ppc: number; lsa: number; seo: number }>({
     all: 0,
     ppc: 0,
     lsa: 0,
     seo: 0,
   });
-
-  const fetchMetrics = async () => {
-    if (!clientId || !startDate || !endDate) return;
-
-    const { data: leads, error: leadsError } = await supabase
-      .from('hmstr_leads')
-      .select('first_qual_date, first_lead_source, lead_score_max, close_score_max')
-      .eq('client_id', clientId)
-      .eq('hmstr_qualified_lead', true)
-      .gte('first_qual_date', startDate)
-      .lte('first_qual_date', endDate);
-
-    if (leadsError || !leads) return;
-
-    const result = {
-      all: { count: 0, leadScore: 0, closeScore: 0 },
-      ppc: { count: 0, leadScore: 0, closeScore: 0 },
-      lsa: { count: 0, leadScore: 0, closeScore: 0 },
-      seo: { count: 0, leadScore: 0, closeScore: 0 },
-    };
-
-    leads.forEach((row) => {
-      const source = row.first_lead_source;
-      const score = row.lead_score_max || 0;
-      const close = row.close_score_max || 0;
-
-      result.all.count++;
-      result.all.leadScore += score;
-      result.all.closeScore += close;
-
-      if (source === 'PPC Pool' || source === 'CTC') {
-        result.ppc.count++;
-        result.ppc.leadScore += score;
-        result.ppc.closeScore += close;
-      } else if (source === 'LSA') {
-        result.lsa.count++;
-        result.lsa.leadScore += score;
-        result.lsa.closeScore += close;
-      } else if (source === 'GMB') {
-        result.seo.count++;
-        result.seo.leadScore += score;
-        result.seo.closeScore += close;
-      }
-    });
-
-    const spc = await getSpcCosts(clientId, startDate, endDate);
-    const { ppc, lsa, seo } = spc;
-    const total = ppc + lsa + seo;
-
-    result.all.costPerQL = result.all.count ? total / result.all.count : 0;
-    result.ppc.costPerQL = result.ppc.count ? ppc / result.ppc.count : 0;
-    result.lsa.costPerQL = result.lsa.count ? lsa / result.lsa.count : 0;
-    result.seo.costPerQL = result.seo.count ? seo / result.seo.count : 0;
-
-    setMetrics(result);
-    setCosts({ all: total, ppc, lsa, seo });
-    setPieData([
-      { name: 'PPC', value: result.ppc.count },
-      { name: 'LSA', value: result.lsa.count },
-      { name: 'SEO', value: result.seo.count },
-    ]);
-  };
 
   const getSpcCosts = async (clientId: number, start: string, end: string) => {
     const { data, error } = await supabase.rpc('get_spc_cost_by_channel', {
@@ -119,13 +77,72 @@ export default function TopMetrics({
     };
   };
 
-  const formatCurrency = (value: number) => {
-    return `$${value.toFixed(2)}`;
-  };
-
   useEffect(() => {
+    const fetchMetrics = async () => {
+      if (!clientId || !startDate || !endDate) return;
+
+      const { data: leads, error: leadsError } = await supabase
+        .from('hmstr_leads')
+        .select('first_qual_date, first_lead_source, lead_score_max, close_score_max')
+        .eq('client_id', clientId)
+        .eq('hmstr_qualified_lead', true)
+        .gte('first_qual_date', startDate)
+        .lte('first_qual_date', endDate);
+
+      if (leadsError || !leads) return;
+
+      const result: AllMetrics = {
+        all: { count: 0, leadScore: 0, closeScore: 0 },
+        ppc: { count: 0, leadScore: 0, closeScore: 0 },
+        lsa: { count: 0, leadScore: 0, closeScore: 0 },
+        seo: { count: 0, leadScore: 0, closeScore: 0 },
+      };
+
+      leads.forEach((row) => {
+        const source = row.first_lead_source;
+        const score = row.lead_score_max || 0;
+        const close = row.close_score_max || 0;
+
+        result.all.count++;
+        result.all.leadScore += score;
+        result.all.closeScore += close;
+
+        if (source === 'PPC Pool' || source === 'CTC') {
+          result.ppc.count++;
+          result.ppc.leadScore += score;
+          result.ppc.closeScore += close;
+        } else if (source === 'LSA') {
+          result.lsa.count++;
+          result.lsa.leadScore += score;
+          result.lsa.closeScore += close;
+        } else if (source === 'GMB') {
+          result.seo.count++;
+          result.seo.leadScore += score;
+          result.seo.closeScore += close;
+        }
+      });
+
+      const spc = await getSpcCosts(clientId, startDate, endDate);
+      const total = spc.ppc + spc.lsa + spc.seo;
+
+      result.all.costPerQL = result.all.count ? total / result.all.count : 0;
+      result.ppc.costPerQL = result.ppc.count ? spc.ppc / result.ppc.count : 0;
+      result.lsa.costPerQL = result.lsa.count ? spc.lsa / result.lsa.count : 0;
+      result.seo.costPerQL = result.seo.count ? spc.seo / result.seo.count : 0;
+
+      setMetrics(result);
+      setCosts({ all: total, ...spc });
+      setPieData([
+        { name: 'PPC', value: result.ppc.count },
+        { name: 'LSA', value: result.lsa.count },
+        { name: 'SEO', value: result.seo.count },
+      ]);
+    };
+
     fetchMetrics();
   }, [clientId, startDate, endDate]);
+
+  const formatCurrency = (value: number) => `$${value.toFixed(2)}`;
 
   return (
     <div className="p-6">
