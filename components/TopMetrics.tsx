@@ -2,15 +2,20 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Card, CardContent } from '@/components/ui/card';
-import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 );
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b'];
 
 export default function TopMetrics({
   clientId,
@@ -21,111 +26,87 @@ export default function TopMetrics({
   startDate: string;
   endDate: string;
 }) {
-  const [totals, setTotals] = useState({
-    all: 0,
-    ppc: 0,
-    lsa: 0,
-    seo: 0,
-  });
-  const [engageRate, setEngageRate] = useState(0);
+  const [data, setData] = useState<any>(null);
 
-  useEffect(() => {
+  const fetchMetrics = async () => {
     if (!clientId || !startDate || !endDate) return;
 
-    async function fetchLeadTotals() {
-      const { data: sourceRows } = await supabase
-        .from('hmstr_leads')
-        .select('first_lead_source')
-        .eq('client_id', clientId)
-        .eq('hmstr_qualified_lead', true)
-        .gte('first_qual_date', startDate)
-        .lte('first_qual_date', endDate);
+    const { data, error } = await supabase.rpc('get_top_metrics', {
+      input_client_id: clientId,
+      input_start_date: startDate,
+      input_end_date: endDate,
+    });
 
-      const counts = {
-        all: sourceRows?.length || 0,
-        ppc: sourceRows?.filter((r) => ['PPC Pool', 'CTC'].includes(r.first_lead_source)).length || 0,
-        lsa: sourceRows?.filter((r) => r.first_lead_source === 'LSA').length || 0,
-        seo: sourceRows?.filter((r) => r.first_lead_source === 'GMB').length || 0,
-      };
+    console.log('TopMetrics RPC call:', {
+      clientId,
+      startDate,
+      endDate,
+      data,
+      error,
+    });
 
-      setTotals(counts);
-    }
+    if (error || !data || !data[0]) return;
+    setData(data[0]);
+  };
 
-    async function fetchEngageRate() {
-      const { data: rows } = await supabase
-        .from('hmstr_ai_data')
-        .select('human_engaged')
-        .eq('client_id', clientId)
-        .gte('action_date', startDate)
-        .lte('action_date', endDate);
+  const formatCurrency = (value: number | string) => {
+    const n = typeof value === 'string' ? parseFloat(value) : value;
+    return `$${(n || 0).toFixed(2)}`;
+  };
 
-      if (!rows || rows.length === 0) {
-        setEngageRate(0);
-        return;
-      }
-
-      const engaged = rows.filter((r) => r.human_engaged === true || r.human_engaged === 'true').length;
-      setEngageRate((engaged / rows.length) * 100);
-    }
-
-    fetchLeadTotals();
-    fetchEngageRate();
+  useEffect(() => {
+    fetchMetrics();
   }, [clientId, startDate, endDate]);
 
-  const chartData = [
-    { name: 'PPC', value: totals.ppc },
-    { name: 'LSA', value: totals.lsa },
-    { name: 'SEO', value: totals.seo },
-  ];
+  if (!data) return null;
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-xs text-muted-foreground">All QLeads</div>
-            <div className="text-xl font-bold">{totals.all}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-xs text-muted-foreground">PPC QLeads</div>
-            <div className="text-xl font-bold">{totals.ppc}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-xs text-muted-foreground">LSA QLeads</div>
-            <div className="text-xl font-bold">{totals.lsa}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-xs text-muted-foreground">SEO QLeads</div>
-            <div className="text-xl font-bold">{totals.seo}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-xs text-muted-foreground">Human Engage Rate</div>
-            <div className="text-xl font-bold">{engageRate.toFixed(2)}%</div>
-          </CardContent>
-        </Card>
+    <div className="p-6">
+      <h2 className="text-xl font-bold mb-4">Top Metrics</h2>
+
+      <div className="mb-2 text-sm text-muted-foreground">
+        <div><strong>Start Date:</strong> {startDate}</div>
+        <div><strong>End Date:</strong> {endDate}</div>
       </div>
 
-      <div className="bg-white rounded-xl shadow p-4">
-        <h2 className="text-lg font-semibold mb-2">Qualified Leads by Source</h2>
-        <ResponsiveContainer width="100%" height={250}>
-          <PieChart>
-            <Pie data={chartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
-              {chartData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Pie>
-            <Tooltip />
-          </PieChart>
-        </ResponsiveContainer>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+        <div><strong>All QLeads:</strong> {data.qualified_leads}</div>
+        <div><strong>PPC QLeads:</strong> {data.qualified_leads_ppc}</div>
+        <div><strong>LSA QLeads:</strong> {data.qualified_leads_lsa}</div>
+        <div><strong>SEO QLeads:</strong> {data.qualified_leads_seo}</div>
+
+        <div><strong>Cost/QL (All):</strong> {formatCurrency(data.cpql_total)}</div>
+        <div><strong>Cost/QL (PPC):</strong> {formatCurrency(data.cpql_ppc)}</div>
+        <div><strong>Cost/QL (LSA):</strong> {formatCurrency(data.cpql_lsa)}</div>
+        <div><strong>Cost/QL (SEO):</strong> {formatCurrency(data.cpql_seo)}</div>
+
+        <div><strong>PPC Cost Total:</strong> {formatCurrency(data.spend_ppc)}</div>
+        <div><strong>LSA Cost Total:</strong> {formatCurrency(data.spend_lsa)}</div>
+        <div><strong>SEO Cost Total:</strong> {formatCurrency(data.spend_seo)}</div>
       </div>
+
+      <h2 className="text-xl font-bold mt-8 mb-2">Qualified Leads by Source</h2>
+      <ResponsiveContainer width="100%" height={300}>
+        <PieChart>
+          <Pie
+            data={[
+              { name: 'PPC', value: data.qualified_leads_ppc || 0 },
+              { name: 'LSA', value: data.qualified_leads_lsa || 0 },
+              { name: 'SEO', value: data.qualified_leads_seo || 0 },
+            ]}
+            dataKey="value"
+            nameKey="name"
+            cx="50%"
+            cy="50%"
+            outerRadius={100}
+          >
+            {[0, 1, 2].map((index) => (
+              <Cell key={`cell-${index}`} fill={COLORS[index]} />
+            ))}
+          </Pie>
+          <Tooltip />
+        </PieChart>
+      </ResponsiveContainer>
     </div>
   );
 }
